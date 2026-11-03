@@ -108,14 +108,20 @@
         <div class="field"><label class="label" for="longEvery">Long break every</label><input id="longEvery" type="number" min="0" max="20" value="0"><span class="unit">blocks (0 = off)</span></div>
         <div class="field"><label class="label" for="longRest">Long break length</label><input id="longRest" type="number" min="0" max="120" value="25"><span class="unit">minutes</span></div>
       </div>
-      <div class="summary" id="summary"></div>
-      <div class="warn" id="warn" role="status" hidden></div>
-
-      <div class="chips" id="presets"></div>
-      <div class="savep">
-        <input type="text" id="presetName" maxlength="30" placeholder="Name this setup, e.g. Exam revision" autocomplete="off">
-        <button type="button" class="btn small" id="savePreset">Save preset</button>
+      <div class="row setup-foot">
+        <div class="summary" id="summary"></div>
+        <details class="presets" id="presetsBox">
+          <summary>Presets</summary>
+          <div class="presets-pop">
+            <div class="chips" id="presets"></div>
+            <div class="savep">
+              <input type="text" id="presetName" maxlength="30" placeholder="Save current setup as…" aria-label="Preset name" autocomplete="off">
+              <button type="button" class="btn small" id="savePreset">Save</button>
+            </div>
+          </div>
+        </details>
       </div>
+      <div class="warn" id="warn" role="status" hidden></div>
     </section>
 
     <section class="card">

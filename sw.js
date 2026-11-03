@@ -1,5 +1,5 @@
 // Bump VERSION whenever you change the app files so phones pick up the update.
-const VERSION = 'sft-v3';
+const VERSION = 'sft-v4';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png'];
 const FONT_HOSTS = new Set(['fonts.googleapis.com', 'fonts.gstatic.com']);
 

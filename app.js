@@ -187,12 +187,14 @@ function refresh() {
   if (idx < 0) plan = r.p;
   const focusSecs = Math.round(Math.max(r.focus, 0) * 60), focusT = r.n * focusSecs;
   const real = r.rests.filter(x => x.m > 0), longs = real.filter(x => x.long).length, shorts = real.length - longs;
-  const sum = [h('b', null, String(r.n)), ' × ', h('b', null, mins(focusSecs)), ' focus'];
-  if (shorts) sum.push(' · ', h('b', null, String(shorts)), shorts === 1 ? ' short rest' : ' short rests');
-  if (longs) sum.push(' · ', h('b', null, String(longs)), longs === 1 ? ' long break' : ' long breaks');
-  if (!real.length && r.n > 1) sum.push(' · no rests');
-  sum.push(` · ${hm(focusT)} focused of ${hm(focusT + sumM(real) * 60)}`);
+  // Compact line; the full breakdown is in the tooltip.
+  const sum = [h('b', null, `${r.n} × ${mins(focusSecs)}`)];
+  if (real.length) sum.push(` · ${real.length} rest${real.length === 1 ? '' : 's'}`);
+  sum.push(` · ${hm(focusT)} focus`);
   $('summary').replaceChildren(...sum);
+  $('summary').title = `${r.n} focus block${r.n === 1 ? '' : 's'} of ${mins(focusSecs)}` +
+    (shorts ? `, ${plural(shorts, 'short rest')}` : '') + (longs ? `, ${plural(longs, 'long break')}` : '') + (real.length ? '' : ', no rests') +
+    `. ${hm(focusT)} focused of ${hm(focusT + sumM(real) * 60)}.`;
   $('warn').hidden = !r.warn; $('warn').textContent = r.warn;
   if (idx < 0) { $('clock').textContent = fmt(plan[0] ? plan[0].secs : 0); $('start').disabled = r.invalid; }
   drawPlan(); renderPresets(); saveSettings();
@@ -228,10 +230,14 @@ function onLabel(e) {
 }
 
 /* ---------- presets ---------- */
-function applyPreset(p) { mode = p.mode || 'count'; for (const k of FIELDS) if (p[k] != null) $(k).value = p[k]; refresh(); }
+function applyPreset(p) { mode = p.mode || 'count'; for (const k of FIELDS) if (p[k] != null) $(k).value = p[k]; $('presetsBox').open = false; refresh(); }
+// Close the presets dropdown on outside click or Escape.
+document.addEventListener('click', e => { if ($('presetsBox').open && e.target.isConnected && !$('presetsBox').contains(e.target)) $('presetsBox').open = false; });
+$('presetsBox').addEventListener('keydown', e => { if (e.key === 'Escape' && $('presetsBox').open) { $('presetsBox').open = false; $('presetsBox').querySelector('summary').focus(); } });
 const findStyle = name => BUILTIN.find(x => x.name === name) || presets.find(x => x.name === name);
 function renderPresets() {
-  const locked = idx >= 0, kids = [h('span', { class: 'label', text: 'Presets' })];
+  const locked = idx >= 0, kids = [];
+  if (locked) $('presetsBox').open = false;
   BUILTIN.forEach(p => kids.push(h('span', { class: 'chip' }, h('button', { type: 'button', disabled: locked, onclick: () => applyPreset(p) }, p.name))));
   presets.forEach((p, i) => kids.push(h('span', { class: 'chip custom' },
     h('button', { type: 'button', disabled: locked, onclick: () => applyPreset(p) }, p.name),
@@ -246,7 +252,7 @@ $('savePreset').onclick = () => {
   const i = presets.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
   const p = { name, mode, ...readFields().v };
   if (i >= 0) presets[i] = p;
-  else if (presets.length >= MAX_PRESETS) { $('savePreset').textContent = 'Preset limit reached'; setTimeout(() => { $('savePreset').textContent = 'Save preset'; }, 2000); return; }
+  else if (presets.length >= MAX_PRESETS) { $('savePreset').textContent = 'Limit reached'; setTimeout(() => { $('savePreset').textContent = 'Save'; }, 2000); return; }
   else presets.push(p);
   store.set('presets', presets); $('presetName').value = ''; renderPresets(); fillStyles($('aStyle').value);
 };
