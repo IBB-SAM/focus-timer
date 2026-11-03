@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Split Focus Timer</title>
+<meta name="description" content="Split a study session into focus blocks with rests, labels, long breaks and stats.">
+<meta name="theme-color" content="#c8641e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
+<script src="app.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Split Focus Timer</h1>
+    <nav class="tabs"><a href="#timer" id="tabTimer" aria-current="page">Timer</a><a href="#plan" id="tabPlan">Daily plan</a><a href="#stats" id="tabStats">Stats</a></nav>
+  </header>
+
+  <div class="alertbar" id="alertBar" role="alert" hidden>
+    <div class="msg"><b id="alertTitle"></b><span id="alertSub"></span></div>
+    <button type="button" class="btn small" id="alertStart">Start in timer</button>
+    <button type="button" class="btn small" id="alertSnooze">Snooze 5 min</button>
+    <button type="button" class="x" id="alertClose" aria-label="Dismiss alert">×</button>
+  </div>
+
+  <!-- ============ DAILY PLAN VIEW ============ -->
+  <main id="viewPlan" class="wrap" hidden>
+    <section class="card">
+      <div class="row"><h2 id="planDate">Today</h2><span class="summary" id="planSum"></span></div>
+      <ul class="acts" id="acts"></ul>
+      <p class="hint" id="notifHint" hidden>Turn on <b>Notifications</b> on the Timer tab to get alerts while this tab is in the background.</p>
+    </section>
+
+    <section class="card" id="actForm">
+      <h2 id="formTitle">Add activity</h2>
+      <div class="fields">
+        <div class="field full"><label class="label" for="aName">Activity</label><input type="text" id="aName" maxlength="60" placeholder="Thesis writing" autocomplete="off"></div>
+        <div class="field"><label class="label" for="aTime">Start time</label><input type="time" id="aTime" value="15:00"></div>
+        <div class="field"><label class="label" for="aDur">Duration</label><input type="number" id="aDur" min="5" max="720" step="1" value="120"><span class="unit">minutes</span></div>
+        <div class="field"><label class="label" for="aAlert">Alert</label>
+          <select id="aAlert"><option value="before">10 min before</option><option value="start">At start time</option><option value="both">Both</option><option value="none">No alert</option></select></div>
+      </div>
+      <div class="fields">
+        <div class="field"><label class="label" for="aRepeat">Repeat</label>
+          <select id="aRepeat"><option value="none">Only today</option><option value="daily">Every day</option><option value="days">Selected days</option></select></div>
+        <div class="field"><label class="label" for="aStyle">Timer style</label><select id="aStyle"></select><span class="unit">how the timer splits it</span></div>
+      </div>
+      <div class="days" id="aDays" role="group" aria-label="Repeat on days" hidden>
+        <button type="button" data-d="1">Mon</button><button type="button" data-d="2">Tue</button><button type="button" data-d="3">Wed</button><button type="button" data-d="4">Thu</button><button type="button" data-d="5">Fri</button><button type="button" data-d="6">Sat</button><button type="button" data-d="0">Sun</button>
+      </div>
+      <div class="opts start"><label><input type="checkbox" id="aAuto"> Start the timer automatically at start time</label></div>
+      <div class="err" id="aErr" role="status" hidden></div>
+      <div class="controls start">
+        <button type="button" class="btn primary" id="aSave">Add to plan</button>
+        <button type="button" class="btn" id="aCancel" hidden>Cancel</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Phone calendar alerts</h2>
+      <p class="hint flush">Web apps can only alert you while open. Add your plan to your phone's calendar and it will remind you even when the app is closed, using the same alert times.</p>
+      <div><button type="button" class="btn small" id="icsAll">Add plan to calendar</button></div>
+    </section>
+  </main>
+
+  <!-- ============ TIMER VIEW ============ -->
+  <main id="viewTimer" class="wrap">
+    <section class="card timer">
+      <div class="phase idle" id="phase">Ready</div>
+      <div class="clock" id="clock" role="timer" aria-live="off">00:00</div>
+      <div class="task" id="task"></div>
+      <div class="bar" id="bar"><i></i></div>
+      <div class="controls">
+        <button type="button" class="btn primary" id="start">Start</button>
+        <button type="button" class="btn" id="skip" disabled>Skip</button>
+        <button type="button" class="btn" id="reset" disabled>Reset</button>
+      </div>
+      <div class="opts">
+        <label><input type="checkbox" id="sound" checked> Chime</label>
+        <label><input type="checkbox" id="auto" checked> Auto-start next part</label>
+        <label><input type="checkbox" id="notify"> Notifications</label>
+      </div>
+    </section>
+
+    <section class="card" id="setup">
+      <div class="row">
+        <h2>Session setup</h2>
+        <div class="seg" role="group" aria-label="Split mode">
+          <button type="button" id="modeCount" aria-pressed="true">By number of blocks</button>
+          <button type="button" id="modeLen" aria-pressed="false">By block length</button>
+        </div>
+      </div>
+      <div class="fields">
+        <div class="field"><label class="label" for="total">Total session</label><input id="total" type="number" min="5" max="720" value="180"><span class="unit">minutes</span></div>
+        <div class="field" id="countWrap"><label class="label" for="count">Focus blocks</label><input id="count" type="number" min="1" max="30" value="3"><span class="unit">splits</span></div>
+        <div class="field" id="lenWrap" hidden><label class="label" for="len">Each block</label><input id="len" type="number" min="5" max="240" value="50"><span class="unit">minutes</span></div>
+        <div class="field"><label class="label" for="rest">Rest per split</label><input id="rest" type="number" min="0" max="60" value="10"><span class="unit">minutes</span></div>
+      </div>
+      <div class="fields">
+        <div class="field"><label class="label" for="longEvery">Long break every</label><input id="longEvery" type="number" min="0" max="20" value="0"><span class="unit">blocks (0 = off)</span></div>
+        <div class="field"><label class="label" for="longRest">Long break length</label><input id="longRest" type="number" min="0" max="120" value="25"><span class="unit">minutes</span></div>
+      </div>
+      <div class="summary" id="summary"></div>
+      <div class="warn" id="warn" role="status" hidden></div>
+
+      <div class="chips" id="presets"></div>
+      <div class="savep">
+        <input type="text" id="presetName" maxlength="30" placeholder="Name this setup, e.g. Exam revision" autocomplete="off">
+        <button type="button" class="btn small" id="savePreset">Save preset</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="row"><h2>Session plan</h2><button type="button" class="btn small" id="clearLabels">Clear task labels</button></div>
+      <div class="timeline" id="timeline"></div>
+      <ul class="list" id="list"></ul>
+    </section>
+  </main>
+
+  <!-- ============ STATS VIEW ============ -->
+  <main id="viewStats" class="wrap" hidden>
+    <section class="card">
+      <div class="tiles">
+        <div class="tile"><div class="label">Today</div><div class="v" id="sToday">0m</div><div class="s" id="sTodayB">0 blocks</div></div>
+        <div class="tile"><div class="label">Last 7 days</div><div class="v" id="sWeek">0m</div><div class="s" id="sAvg">0m a day</div></div>
+        <div class="tile"><div class="label">Streak</div><div class="v" id="sStreak">0</div><div class="s">days in a row</div></div>
+        <div class="tile"><div class="label">Plan today</div><div class="v" id="sPlan">0/0</div><div class="s" id="sPlanS">activities done</div></div>
+        <div class="tile"><div class="label">All time</div><div class="v" id="sAll">0h</div><div class="s" id="sAllB">0 blocks</div></div>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Focus minutes per day</h2>
+      <div class="chart" id="chart"></div>
+    </section>
+    <section class="card">
+      <h2>Time by task, last 7 days</h2>
+      <div class="lbls" id="byLabel"></div>
+    </section>
+    <section class="card">
+      <h2>Recent blocks</h2>
+      <ul class="hist" id="hist"></ul>
+      <details>
+        <summary>Manage history</summary>
+        <div class="confirm" id="histTools"></div>
+      </details>
+    </section>
+  </main>
+</div>
+</body>
+</html>
