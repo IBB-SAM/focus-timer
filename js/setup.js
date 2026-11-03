@@ -6,6 +6,7 @@ import { BUILTIN, QUICK, FIELDS, LIMITS, FIELD_NAMES, MAX_PRESETS, isObj, mins, 
 import { drawPlan, beginSession, reset, renderIdle } from './timer.js';
 import { fillStyles } from './daily.js';
 import { toast } from './toast.js';
+import { syncSteppers } from './stepper.js';
 
 /* ---------- settings ---------- */
 export function loadSettings() {
@@ -89,7 +90,7 @@ export function refresh() {
   $('warn').hidden = !r.warn; $('warn').textContent = r.warn;
 
   if (S.idx < 0) { $('start').disabled = r.invalid; renderIdle(); }
-  drawPlan(); renderPresets(); saveSettings();
+  drawPlan(); renderPresets(); saveSettings(); syncSteppers();
 }
 
 /* ---------- presets ---------- */

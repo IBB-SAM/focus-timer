@@ -60,6 +60,20 @@ input[type=number],input[type=text],input[type=time]{font-family:var(--mono);fon
 input[type=number],input[type=time],select,.field input[type=text]{min-height:44px}
 input[type=time]{display:block;line-height:1.2}
 input[type=time]::-webkit-date-and-time-value{text-align:left}
+/* − / + stepper around number inputs (see js/stepper.js); native spinners hidden */
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.stepper{display:flex;align-items:stretch;border:1px solid var(--line);border-radius:8px;background:var(--bg);overflow:hidden;min-width:0}
+.stepper:focus-within{outline:2px solid var(--focus);outline-offset:2px}
+.stepper input[type=number]{border:0;border-radius:0;background:transparent;text-align:center;flex:1 1 auto;width:100%;min-width:0;padding-inline:4px}
+.stepper input:focus-visible{outline:none}
+.step-btn{flex:none;width:40px;border:0;background:transparent;color:var(--fg);font:inherit;font-size:1.2rem;line-height:1;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.step-btn:first-child{border-right:1px solid var(--line)}
+.step-btn:last-child{border-left:1px solid var(--line)}
+.step-btn:hover:not(:disabled){color:var(--focus);background:var(--surface)}
+.step-btn:active:not(:disabled){background:var(--line)}
+.step-btn:disabled{opacity:.35;cursor:default}
+.stepper:has(input:disabled){opacity:.7}
 /* iOS Safari draws its own time control that ignores width unless reset */
 @supports (-webkit-touch-callout:none){input[type=time]{-webkit-appearance:none;appearance:none}}
 input[type=text]{font-family:var(--body);font-size:.92rem}

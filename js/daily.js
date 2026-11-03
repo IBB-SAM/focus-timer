@@ -10,6 +10,7 @@ import { beginSession, reset } from './timer.js';
 import { chime, canNotify, showNotif } from './feedback.js';
 import { route } from './router.js';
 import { toast } from './toast.js';
+import { syncSteppers } from './stepper.js';
 
 let editingId = null, alertAct = null, alertArmed = false, replaceArm = null, lastSig = '';
 const saveActs = () => store.set('acts', S.acts);
@@ -97,17 +98,17 @@ const getDays = () => [...$('aDays').querySelectorAll('button[aria-pressed="true
 export function clearForm() {
   editingId = null; $('formTitle').textContent = 'Add activity'; $('aSave').textContent = 'Add to plan'; $('aCancel').hidden = true;
   $('aName').value = ''; $('aDur').value = 60; $('aAlert').value = 'before'; $('aRepeat').value = 'daily'; $('aDays').hidden = true; setDays([]);
-  $('aAuto').checked = false; fillStyles('50/10'); $('aErr').hidden = true;
+  $('aAuto').checked = false; fillStyles('50/10'); $('aErr').hidden = true; syncSteppers();
 }
 function fillExample() {
   clearForm();
-  $('aName').value = 'Thesis writing'; $('aTime').value = '15:00'; $('aDur').value = 120; $('aRepeat').value = 'none';
+  $('aName').value = 'Thesis writing'; $('aTime').value = '15:00'; $('aDur').value = 120; $('aRepeat').value = 'none'; syncSteppers();
   $('actForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('aSave').focus({ preventScroll: true });
 }
 function editAct(a) {
   editingId = a.id; $('formTitle').textContent = 'Edit activity'; $('aSave').textContent = 'Save changes'; $('aCancel').hidden = false;
   $('aName').value = a.name; $('aTime').value = a.time; $('aDur').value = a.dur; $('aAlert').value = a.alert; $('aRepeat').value = a.repeat;
-  $('aDays').hidden = a.repeat !== 'days'; setDays(a.days); $('aAuto').checked = a.auto; fillStyles(a.style); $('aErr').hidden = true;
+  $('aDays').hidden = a.repeat !== 'days'; setDays(a.days); $('aAuto').checked = a.auto; fillStyles(a.style); $('aErr').hidden = true; syncSteppers();
   $('actForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('aName').focus({ preventScroll: true });
 }
 function saveForm() {

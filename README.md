@@ -46,6 +46,7 @@ Edit the files and commit. Then bump the version in two places so browsers and i
   - `feedback.js`: chime, notifications and screen wake lock.
   - `theme.js` + `theme-boot.js`: the light/dark/system toggle (`theme-boot.js` runs first so the page doesn't flash).
   - `toast.js`, `keys.js`, `focusmode.js`, `router.js`: undo toasts, keyboard shortcuts, focus mode and tabs.
+  - `stepper.js`: − / + buttons on number inputs (phones have no native arrows). Steps come from each input's `step` attribute.
 - `sw.js`: offline cache and notification clicks. If you add a file under `js/`, add it to `MODULES` here too.
 
 ## Notes
