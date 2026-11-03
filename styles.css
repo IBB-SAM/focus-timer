@@ -51,9 +51,17 @@ header{display:flex;justify-content:space-between;align-items:center;flex-wrap:w
 .label{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:500}
 .row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
 .fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px}
-.field{display:grid;gap:6px;align-content:start}
+/* min-width:0 on fields and inputs lets grid columns shrink below the
+   browser's built-in input width (date/time inputs are wide on phones). */
+.field{display:grid;gap:6px;align-content:start;min-width:0}
+.field>*{min-width:0;max-width:100%}
 .field.full{grid-column:1/-1}
-input[type=number],input[type=text],input[type=time]{font-family:var(--mono);font-size:1.05rem;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);width:100%;min-width:0}
+input[type=number],input[type=text],input[type=time]{font-family:var(--mono);font-size:1.05rem;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);width:100%;min-width:0;max-width:100%}
+input[type=number],input[type=time],select,.field input[type=text]{min-height:44px}
+input[type=time]{display:block;line-height:1.2}
+input[type=time]::-webkit-date-and-time-value{text-align:left}
+/* iOS Safari draws its own time control that ignores width unless reset */
+@supports (-webkit-touch-callout:none){input[type=time]{-webkit-appearance:none;appearance:none}}
 input[type=text]{font-family:var(--body);font-size:.92rem}
 select{font:inherit;font-size:.95rem;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);width:100%}
 input:disabled{opacity:.55}
@@ -257,10 +265,16 @@ body.focus-mode .timer-top:hover,body.focus-mode .timer-top:focus-within{opacity
   .tabs svg{display:block}
 }
 @media (max-width:440px){
+  /* two equal columns that can shrink, instead of auto-fit min widths */
+  .fields{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  input[type=number],input[type=time]{font-size:1rem;padding:8px 10px}
+  select{padding:8px}
+  .card{padding:16px}
   .acts li{grid-template-columns:3rem minmax(0,1fr)}.acts .side{grid-column:1/-1;justify-content:flex-start}
   .chart{gap:3px}.col .b span{display:none}
   .hist li{grid-template-columns:5.5rem minmax(0,1fr) 3.4rem}
   .presets{position:static}
   .presets-pop{left:12px;right:12px;top:auto;width:auto;margin-top:8px}
 }
+@media (max-width:359px){.fields{grid-template-columns:minmax(0,1fr)}}
 @media (prefers-reduced-motion:reduce){.ring-fg,.presets>summary::after,body.focus-mode .controls{transition:none}}
