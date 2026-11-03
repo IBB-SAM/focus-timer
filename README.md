@@ -19,8 +19,10 @@ All data stays in each person's own browser. Nothing is sent to a server, so fri
 
 1. Create a new public repository on GitHub, for example `focus-timer`.
 2. Upload every file in this folder, keeping the `icons` folder.
-3. Go to **Settings → Pages**. Under "Build and deployment", choose **Deploy from a branch**, branch `main`, folder `/ (root)`, then **Save**.
+3. Go to **Settings → Pages**. Under "Build and deployment", set **Source** to **GitHub Actions**. The included workflow (`.github/workflows/pages.yml`) deploys on every push to `main`.
 4. After about a minute the app is live at `https://<your-username>.github.io/focus-timer/`.
+
+Live copy: https://ibb-sam.github.io/focus-timer/
 
 ## Updating
 
