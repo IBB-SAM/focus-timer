@@ -20,6 +20,15 @@ export function h(tag, props, ...kids) {
   return el;
 }
 
+/* Round a number input to its step (counted from min) and clamp to min/max.
+   Arrows already move by step; this catches typed in-between values. */
+export function snapToStep(el) {
+  const n = parseFloat(el.value); if (!Number.isFinite(n)) return;
+  const step = Number(el.step) || 1, min = Number(el.min) || 0, max = el.max === '' ? Infinity : Number(el.max);
+  const v = Math.min(max, Math.max(min, min + Math.round((n - min) / step) * step));
+  if (String(v) !== el.value) el.value = v;
+}
+
 export function download(name, text, type) {
   const url = URL.createObjectURL(new Blob([text], { type }));
   const a = h('a', { href: url, download: name });

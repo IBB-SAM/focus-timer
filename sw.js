@@ -1,5 +1,5 @@
 // Bump VERSION whenever you change the app files so phones pick up the update.
-const VERSION = 'sft-v7';
+const VERSION = 'sft-v8';
 const MODULES = ['main', 'state', 'store', 'util', 'validate', 'dom', 'toast', 'theme', 'theme-boot', 'router', 'keys', 'focusmode',
   'feedback', 'setup', 'timer', 'daily', 'stats'].map(m => `js/${m}.js`);
 const SHELL = ['./', 'index.html', 'styles.css', ...MODULES, 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png'];

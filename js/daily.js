@@ -115,7 +115,7 @@ function saveForm() {
   const rep = ['none', 'daily', 'days'].includes($('aRepeat').value) ? $('aRepeat').value : 'none', days = getDays();
   const err = !name ? 'Give the activity a name.'
     : !TIME_RE.test(time) ? 'Pick a start time.'
-    : !(Number.isFinite(durRaw) && dur >= 5 && dur <= 720) ? 'Duration must be between 5 and 720 minutes.'
+    : !(Number.isFinite(durRaw) && dur >= 30 && dur <= 720) ? 'Duration must be between 30 and 720 minutes.'
     : (rep === 'days' && !days.length) ? 'Pick at least one day, or choose another repeat option.'
     : (!editingId && S.acts.length >= MAX_ACTS) ? `You can have up to ${MAX_ACTS} activities.` : '';
   if (err) { $('aErr').textContent = err; $('aErr').hidden = false; return; }

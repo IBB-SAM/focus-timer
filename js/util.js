@@ -15,7 +15,8 @@ export const QUICK = [
   { label: '90/20 ×2', preset: 'Deep 90/20', title: '2 × 90 min focus with a 20 min rest' }
 ];
 export const FIELDS = ['total', 'count', 'len', 'rest', 'longEvery', 'longRest'];
-export const LIMITS = { total: [5, 720, 170], count: [1, 30, 3], len: [5, 240, 50], rest: [0, 60, 10], longEvery: [0, 20, 0], longRest: [0, 120, 25] };
+// [min, max, default]. Total moves in 30 min steps and rest in 5 min steps (see index.html step=).
+export const LIMITS = { total: [30, 720, 180], count: [1, 30, 3], len: [5, 240, 50], rest: [0, 60, 15], longEvery: [0, 20, 0], longRest: [0, 120, 25] };
 export const FIELD_NAMES = { total: 'Total session', count: 'Focus blocks', len: 'Each block', rest: 'Rest per split', longEvery: 'Long break every', longRest: 'Long break length' };
 export const DAY_RE = /^\d{4}-\d\d-\d\d$/;
 export const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
