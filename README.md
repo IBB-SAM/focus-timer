@@ -26,7 +26,10 @@ Live copy: https://ibb-sam.github.io/focus-timer/
 
 ## Updating
 
-Edit the files and commit. Then open `sw.js` and bump `VERSION` (for example `sft-v3` to `sft-v4`) so installed copies on phones pick up the change.
+Edit the files and commit. Then bump the version in two places so browsers and installed copies pick up the change, and never mix old and new files:
+
+- `sw.js`: `VERSION` (for example `sft-v6` to `sft-v7`)
+- `index.html`: the `?v=` on `styles.css` and `js/main.js` (for example `?v=6` to `?v=7`)
 
 ## Files
 
