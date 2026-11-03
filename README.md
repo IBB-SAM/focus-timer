@@ -31,9 +31,19 @@ Edit the files and commit. Then open `sw.js` and bump `VERSION` (for example `sf
 ## Files
 
 - `index.html`: markup only, with a strict Content-Security-Policy.
-- `styles.css`: all styles.
-- `app.js`: all behaviour. The DOM is built without HTML strings, and everything read from `localStorage` is validated.
-- `sw.js`: offline cache and notification clicks.
+- `styles.css`: all styles, with light/dark theme tokens.
+- `js/`: behaviour, as ES modules. The DOM is built without HTML strings, and everything read from `localStorage` is validated.
+  - `main.js`: entry point; loads state and wires the modules.
+  - `state.js`, `store.js`, `validate.js`: app state, storage, and validation of stored data.
+  - `util.js`, `dom.js`: constants, formatting, and DOM helpers.
+  - `setup.js`: session setup, plan maths, presets and quick start.
+  - `timer.js`: timer engine, progress ring, session plan, and saving or restoring a running session.
+  - `daily.js`: daily plan, alerts and calendar export.
+  - `stats.js`: stats view.
+  - `feedback.js`: chime, notifications and screen wake lock.
+  - `theme.js` + `theme-boot.js`: the light/dark/system toggle (`theme-boot.js` runs first so the page doesn't flash).
+  - `toast.js`, `keys.js`, `focusmode.js`, `router.js`: undo toasts, keyboard shortcuts, focus mode and tabs.
+- `sw.js`: offline cache and notification clicks. If you add a file under `js/`, add it to `MODULES` here too.
 
 ## Notes
 

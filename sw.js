@@ -1,6 +1,8 @@
 // Bump VERSION whenever you change the app files so phones pick up the update.
-const VERSION = 'sft-v4';
-const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png'];
+const VERSION = 'sft-v5';
+const MODULES = ['main', 'state', 'store', 'util', 'validate', 'dom', 'toast', 'theme', 'theme-boot', 'router', 'keys', 'focusmode',
+  'feedback', 'setup', 'timer', 'daily', 'stats'].map(m => `js/${m}.js`);
+const SHELL = ['./', 'index.html', 'styles.css', ...MODULES, 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png'];
 const FONT_HOSTS = new Set(['fonts.googleapis.com', 'fonts.gstatic.com']);
 
 self.addEventListener('install', e => {

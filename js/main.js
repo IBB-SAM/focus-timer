@@ -1,0 +1,17 @@
+// Entry point: load state, wire every module, then render.
+import { loadState } from './state.js';
+import { initTheme } from './theme.js';
+import { initFeedback } from './feedback.js';
+import { initSetup, loadSettings, refresh } from './setup.js';
+import { initTimer, restoreSession } from './timer.js';
+import { initDaily, clearForm, checkAlerts } from './daily.js';
+import { initStats } from './stats.js';
+import { initFocusMode } from './focusmode.js';
+import { initKeys } from './keys.js';
+import { initRouter, route } from './router.js';
+
+loadState();
+initTheme(); initFeedback(); initSetup(); initTimer(); initDaily(); initStats(); initFocusMode(); initKeys(); initRouter();
+loadSettings(); refresh(); restoreSession(); clearForm(); route(); checkAlerts();
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
