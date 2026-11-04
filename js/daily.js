@@ -3,7 +3,7 @@
 import { $, h, download } from './dom.js';
 import { store } from './store.js';
 import { S, sessionActive } from './state.js';
-import { BUILTIN, TIME_RE, DAYN, MAX_ACTS, pad, fmtD, dayKey, clip } from './util.js';
+import { BUILTIN, TIME_RE, DAY_RE, DAYN, MAX_ACTS, pad, fmtD, dayKey, clip } from './util.js';
 import { cleanAct } from './validate.js';
 import { refresh, buildPlan, findStyle } from './setup.js';
 import { beginSession, reset } from './timer.js';
@@ -15,10 +15,21 @@ import { syncSteppers } from './stepper.js';
 let editingId = null, alertAct = null, alertArmed = false, replaceArm = null, lastSig = '';
 const saveActs = () => store.set('acts', S.acts);
 
+/* ---------- days ----------
+   The list shows one day at a time (viewDay, 'YYYY-MM-DD'): today or a later day,
+   so tomorrow can be planned ahead. Start, Done and alerts only apply to today. */
+const todayKey = () => dayKey(new Date());
+const parseDay = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (k, n) => { const d = parseDay(k); d.setDate(d.getDate() + n); return dayKey(d); };
+const dayLabel = k => { const d = parseDay(k); return `${DAYN[d.getDay()]} ${d.getDate()} ${d.toLocaleString('en', { month: 'short' })}`; };
+const dayTitle = k => k === todayKey() ? `Today, ${dayLabel(k)}` : k === addDays(todayKey(), 1) ? `Tomorrow, ${dayLabel(k)}` : dayLabel(k);
+let viewDay = todayKey();
+
 /* ---------- queries ---------- */
 const occursOn = (a, d) => a.repeat === 'daily' || (a.repeat === 'days' && a.days.includes(d.getDay())) || (a.repeat === 'none' && a.date === dayKey(d));
 const startTs = (a, d = new Date()) => { const [hh, m] = a.time.split(':').map(Number); const t = new Date(d); t.setHours(hh, m, 0, 0); return t.getTime(); };
-export const todayActs = () => S.acts.filter(a => occursOn(a, new Date())).sort((a, b) => a.time.localeCompare(b.time));
+const actsOn = k => { const d = parseDay(k); return S.acts.filter(a => occursOn(a, d)).sort((a, b) => a.time.localeCompare(b.time)); };
+export const todayActs = () => actsOn(todayKey());
 export const isDone = id => !!(S.doneMap[dayKey(new Date())] || {})[id];
 export function setDone(id, v, day = dayKey(new Date())) {
   S.doneMap[day] = S.doneMap[day] || {};
@@ -27,7 +38,7 @@ export function setDone(id, v, day = dayKey(new Date())) {
 }
 const repeatText = a => a.repeat === 'daily' ? 'every day' : a.repeat === 'days'
   ? (a.days.length === 5 && [1, 2, 3, 4, 5].every(d => a.days.includes(d)) ? 'weekdays' : a.days.slice().sort((x, y) => ((x + 6) % 7) - ((y + 6) % 7)).map(d => DAYN[d]).join(', '))
-  : 'today only';
+  : a.date === todayKey() ? 'today only' : `one day, ${dayLabel(a.date)}`;
 const alertText = a => ({ before: 'alert 10 min before', start: 'alert at start', both: 'alerts 10 min before and at start', none: 'no alert' })[a.alert];
 function statusOf(a) {
   if (isDone(a.id)) return 'done';
@@ -40,14 +51,19 @@ function statusOf(a) {
 /* ---------- list ---------- */
 const PILLS = { done: ['pill done', 'Done'], active: ['pill now', 'In timer'], now: ['pill now', 'Now'], soon: ['pill soon', 'Starting soon'], missed: ['pill', 'Missed'] };
 export function renderPlan(force) {
-  const d = new Date();
-  $('planDate').textContent = `Today, ${DAYN[d.getDay()]} ${d.getDate()} ${d.toLocaleString('en', { month: 'short' })}`;
-  const ta = todayActs(), tot = ta.reduce((x, a) => x + a.dur, 0), dn = ta.filter(a => isDone(a.id)).length;
-  $('planSum').textContent = ta.length ? `${fmtD(tot)} planned · ${dn}/${ta.length} done` : '';
+  const t = todayKey();
+  if (viewDay < t) { viewDay = t; if (!editingId) syncFormDate(); } // the day rolled over at midnight
+  const isToday = viewDay === t;
+  $('planDate').textContent = dayTitle(viewDay);
+  $('planDay').min = t;
+  if (document.activeElement !== $('planDay')) $('planDay').value = viewDay; // don't fight someone typing a date
+  $('dayPrev').disabled = isToday; $('dayToday').hidden = isToday;
+  const ta = actsOn(viewDay), tot = ta.reduce((x, a) => x + a.dur, 0), dn = ta.filter(a => isDone(a.id)).length;
+  $('planSum').textContent = !ta.length ? '' : isToday ? `${fmtD(tot)} planned · ${dn}/${ta.length} done` : `${fmtD(tot)} planned · ${ta.length} ${ta.length === 1 ? 'activity' : 'activities'}`;
   $('notifHint').hidden = !ta.some(a => a.alert !== 'none') || canNotify();
-  const st = ta.map(statusOf);
+  const st = isToday ? ta.map(statusOf) : ta.map(() => 'upcoming');
   // Only rebuild when something visible changed, so the 10 s refresh doesn't steal keyboard focus.
-  const sig = JSON.stringify([dayKey(d), ta, st, replaceArm]);
+  const sig = JSON.stringify([t, viewDay, ta, st, replaceArm]);
   if (!force && sig === lastSig) return;
   lastSig = sig;
   const ae = document.activeElement, keep = ae && ae.dataset && ae.dataset.act ? [ae.dataset.act, ae.dataset.id] : null;
@@ -58,14 +74,17 @@ export function renderPlan(force) {
       h('div', { class: 'info' }, h('div', { class: 'nm', text: a.name }),
         h('div', { class: 'meta', text: `${fmtD(a.dur)} · ${repeatText(a)} · ${alertText(a)}${a.auto ? ' · auto-start' : ''}` })),
       h('div', { class: 'side' }, pill ? h('span', { class: pill[0], text: pill[1] }) : null,
-        h('button', { type: 'button', class: 'ib' + (arm ? ' warn' : ''), dataset: { act: 'start', id: a.id },
-          'aria-label': arm ? `Replace the running session with ${a.name}` : `Start ${a.name} in timer`, title: 'Start in timer' }, arm ? 'Replace?' : '▶'),
-        h('button', { type: 'button', class: 'ib' + (s === 'done' ? ' on' : ''), dataset: { act: 'done', id: a.id }, 'aria-pressed': String(s === 'done'),
-          'aria-label': `Mark ${a.name} done`, title: 'Mark done' }, '✓'),
+        // Start and Done only make sense on the day itself.
+        isToday ? h('button', { type: 'button', class: 'ib' + (arm ? ' warn' : ''), dataset: { act: 'start', id: a.id },
+          'aria-label': arm ? `Replace the running session with ${a.name}` : `Start ${a.name} in timer`, title: 'Start in timer' }, arm ? 'Replace?' : '▶') : null,
+        isToday ? h('button', { type: 'button', class: 'ib' + (s === 'done' ? ' on' : ''), dataset: { act: 'done', id: a.id }, 'aria-pressed': String(s === 'done'),
+          'aria-label': `Mark ${a.name} done`, title: 'Mark done' }, '✓') : null,
         h('button', { type: 'button', class: 'ib', dataset: { act: 'edit', id: a.id }, 'aria-label': `Edit ${a.name}`, title: 'Edit' }, '✎'),
         h('button', { type: 'button', class: 'ib', dataset: { act: 'del', id: a.id }, 'aria-label': `Delete ${a.name}`, title: 'Delete' }, '✕')));
   }) : [h('li', { class: 'empty-row first-run' },
-    h('p', { class: 'empty', text: 'Nothing planned for today. Add activities with a start time: the app reminds you and can start the timer for you.' }),
+    h('p', { class: 'empty', text: isToday
+      ? 'Nothing planned for today. Add activities with a start time: the app reminds you and can start the timer for you.'
+      : `Nothing planned for ${dayTitle(viewDay).replace(/^Tomorrow/, 'tomorrow')} yet. Activities you add below go on this day.` }),
     h('button', { type: 'button', class: 'btn small', onclick: fillExample }, 'Try an example: Thesis writing, 15:00, 2 h'))]));
   if (keep) {
     const b = $('acts').querySelector(`button[data-act="${CSS.escape(keep[0])}"][data-id="${CSS.escape(keep[1] || '')}"]`);
@@ -95,43 +114,66 @@ export function fillStyles(sel) {
 }
 const setDays = list => $('aDays').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(list.includes(+b.dataset.d))));
 const getDays = () => [...$('aDays').querySelectorAll('button[aria-pressed="true"]')].map(b => +b.dataset.d);
+// Show the day chips or the date box to match the Repeat choice.
+function syncRepeatUI() { const r = $('aRepeat').value; $('aDays').hidden = r !== 'days'; $('aDateWrap').hidden = r !== 'none'; }
+// A new activity goes on the day being viewed; for a later day that means "one day only".
+function syncFormDate() {
+  $('aDate').min = todayKey(); $('aDate').value = viewDay;
+  if (viewDay !== todayKey()) $('aRepeat').value = 'none';
+  syncRepeatUI();
+}
+function setViewDay(k) {
+  if (!DAY_RE.test(k) || Number.isNaN(parseDay(k).getTime())) k = todayKey();
+  viewDay = k < todayKey() ? todayKey() : k; replaceArm = null;
+  if (!editingId) syncFormDate();
+  renderPlan(true);
+}
 export function clearForm() {
   editingId = null; $('formTitle').textContent = 'Add activity'; $('aSave').textContent = 'Add to plan'; $('aCancel').hidden = true;
-  $('aName').value = ''; $('aDur').value = 60; $('aAlert').value = 'before'; $('aRepeat').value = 'daily'; $('aDays').hidden = true; setDays([]);
-  $('aAuto').checked = false; fillStyles('50/10'); $('aErr').hidden = true; syncSteppers();
+  $('aName').value = ''; $('aDur').value = 60; $('aAlert').value = 'before'; $('aRepeat').value = 'daily'; setDays([]);
+  $('aAuto').checked = false; fillStyles('50/10'); $('aErr').hidden = true; syncFormDate(); syncSteppers();
 }
 function fillExample() {
   clearForm();
-  $('aName').value = 'Thesis writing'; $('aTime').value = '15:00'; $('aDur').value = 120; $('aRepeat').value = 'none'; syncSteppers();
+  $('aName').value = 'Thesis writing'; $('aTime').value = '15:00'; $('aDur').value = 120; $('aRepeat').value = 'none'; syncRepeatUI(); syncSteppers();
   $('actForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('aSave').focus({ preventScroll: true });
 }
 function editAct(a) {
   editingId = a.id; $('formTitle').textContent = 'Edit activity'; $('aSave').textContent = 'Save changes'; $('aCancel').hidden = false;
   $('aName').value = a.name; $('aTime').value = a.time; $('aDur').value = a.dur; $('aAlert').value = a.alert; $('aRepeat').value = a.repeat;
-  $('aDays').hidden = a.repeat !== 'days'; setDays(a.days); $('aAuto').checked = a.auto; fillStyles(a.style); $('aErr').hidden = true; syncSteppers();
+  const d = a.date || viewDay; $('aDate').min = d < todayKey() ? d : todayKey(); $('aDate').value = d;
+  setDays(a.days); syncRepeatUI(); $('aAuto').checked = a.auto; fillStyles(a.style); $('aErr').hidden = true; syncSteppers();
   $('actForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('aName').focus({ preventScroll: true });
 }
 function saveForm() {
   const name = $('aName').value.trim().slice(0, 60), time = $('aTime').value, durRaw = Number($('aDur').value), dur = Math.round(durRaw);
   const rep = ['none', 'daily', 'days'].includes($('aRepeat').value) ? $('aRepeat').value : 'none', days = getDays();
+  const date = $('aDate').value, old = editingId ? S.acts.find(x => x.id === editingId) : null;
   const err = !name ? 'Give the activity a name.'
     : !TIME_RE.test(time) ? 'Pick a start time.'
     : !(Number.isFinite(durRaw) && dur >= 30 && dur <= 720) ? 'Duration must be between 30 and 720 minutes.'
     : (rep === 'days' && !days.length) ? 'Pick at least one day, or choose another repeat option.'
+    : (rep === 'none' && !(DAY_RE.test(date) && !Number.isNaN(parseDay(date).getTime()))) ? 'Pick a date.'
+    // Past dates are refused, except leaving an existing activity's own date unchanged.
+    : (rep === 'none' && date < todayKey() && !(old && old.date === date)) ? 'Pick today or a later date.'
     : (!editingId && S.acts.length >= MAX_ACTS) ? `You can have up to ${MAX_ACTS} activities.` : '';
   if (err) { $('aErr').textContent = err; $('aErr').hidden = false; return; }
   const a = cleanAct({
     id: editingId || ('a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)), name, time, dur,
-    alert: $('aAlert').value, repeat: rep, days: rep === 'days' ? days : [], date: rep === 'none' ? dayKey(new Date()) : undefined,
+    alert: $('aAlert').value, repeat: rep, days: rep === 'days' ? days : [], date: rep === 'none' ? date : undefined,
     style: findStyle($('aStyle').value) ? $('aStyle').value : '', auto: $('aAuto').checked
   });
   if (!a) { $('aErr').textContent = 'Something in this activity is not valid.'; $('aErr').hidden = false; return; }
   if (editingId) {
-    const i = S.acts.findIndex(x => x.id === editingId), old = S.acts[i];
-    if (old && old.time !== a.time) { for (const k of Object.keys(S.fired)) if (k.includes('|' + a.id + '|')) delete S.fired[k]; store.set('fired', S.fired); }
+    const i = S.acts.findIndex(x => x.id === editingId);
+    if (old && (old.time !== a.time || old.date !== a.date)) { for (const k of Object.keys(S.fired)) if (k.includes('|' + a.id + '|')) delete S.fired[k]; store.set('fired', S.fired); }
     if (i >= 0) S.acts[i] = a; else S.acts.push(a);
   } else S.acts.push(a);
+  // If it went on a day other than the one shown, jump there so it's visible.
+  const moved = rep === 'none' && date !== viewDay && date >= todayKey();
+  if (moved) viewDay = date;
   saveActs(); clearForm(); renderPlan(true); checkAlerts();
+  if (moved) toast(`${old ? 'Moved to' : 'Added to'} ${dayTitle(date)}`, { ms: 2500 });
 }
 
 /* ---------- hand an activity to the timer (without overwriting the user's saved setup) ---------- */
@@ -249,8 +291,18 @@ export function initDaily() {
     renderPlan(true);
   });
   $('aDays').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); $('aErr').hidden = true; });
-  $('aRepeat').addEventListener('change', () => { $('aDays').hidden = $('aRepeat').value !== 'days'; if ($('aRepeat').value === 'days' && !getDays().length) setDays([new Date().getDay()]); });
-  ['aName', 'aTime', 'aDur'].forEach(k => $(k).addEventListener('input', () => { $('aErr').hidden = true; }));
+  $('aRepeat').addEventListener('change', () => {
+    syncRepeatUI(); $('aErr').hidden = true;
+    if ($('aRepeat').value === 'days' && !getDays().length) setDays([parseDay(viewDay).getDay()]);
+    if ($('aRepeat').value === 'none' && !$('aDate').value) $('aDate').value = viewDay;
+  });
+  // Day switcher above the list.
+  $('dayPrev').addEventListener('click', () => setViewDay(addDays(viewDay, -1)));
+  $('dayNext').addEventListener('click', () => setViewDay(addDays(viewDay, 1)));
+  $('dayToday').addEventListener('click', () => setViewDay(todayKey()));
+  $('planDay').addEventListener('change', () => { if ($('planDay').value) setViewDay($('planDay').value); });
+  $('planDay').addEventListener('blur', () => { $('planDay').value = viewDay; });
+  ['aName', 'aTime', 'aDur', 'aDate'].forEach(k => $(k).addEventListener('input', () => { $('aErr').hidden = true; }));
   $('aCancel').addEventListener('click', clearForm);
   $('aSave').addEventListener('click', saveForm);
 
