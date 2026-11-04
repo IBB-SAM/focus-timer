@@ -15,8 +15,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <script src="js/theme-boot.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500&display=swap">
-<link rel="stylesheet" href="styles.css?v=11">
-<script type="module" src="js/main.js?v=11"></script>
+<link rel="stylesheet" href="styles.css?v=12">
+<script type="module" src="js/main.js?v=12"></script>
 </head>
 <body>
 <div class="wrap">
@@ -123,10 +123,11 @@
   <!-- ============ DAILY PLAN VIEW ============ -->
   <main id="viewPlan" class="wrap" hidden>
     <section class="card">
-      <div class="row"><h2 id="planDate">Today</h2>
+      <div class="row plan-head"><h2 id="planDate">Today</h2>
         <div class="daynav" role="group" aria-label="Choose day">
           <button type="button" class="iconbtn" id="dayPrev" aria-label="Previous day">‹</button>
-          <input type="date" id="planDay" aria-label="Plan date">
+          <!-- On phones the date box collapses to a calendar icon; the invisible input on top still opens the picker. -->
+          <span class="dpick"><svg class="dpick-ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><input type="date" id="planDay" aria-label="Pick a date"></span>
           <button type="button" class="iconbtn" id="dayNext" aria-label="Next day">›</button>
           <button type="button" class="btn small" id="dayToday" hidden>Today</button>
         </div>

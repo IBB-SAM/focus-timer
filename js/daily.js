@@ -54,7 +54,13 @@ export function renderPlan(force) {
   const t = todayKey();
   if (viewDay < t) { viewDay = t; if (!editingId) syncFormDate(); } // the day rolled over at midnight
   const isToday = viewDay === t;
-  $('planDate').textContent = dayTitle(viewDay);
+  // Tomorrow's heading is split so narrow phones can drop the month (and then the date) to stay on one line.
+  if (viewDay === addDays(t, 1)) {
+    const d = parseDay(viewDay);
+    $('planDate').replaceChildren(h('span', { class: 'tmrw' }, 'Tomorrow', h('span', { class: 'tm-d' }, `, ${DAYN[d.getDay()]} ${d.getDate()}`,
+      h('span', { class: 'tm-m' }, ` ${d.toLocaleString('en', { month: 'short' })}`))));
+  } else $('planDate').textContent = dayTitle(viewDay);
+  $('planDate').title = dayTitle(viewDay);
   $('planDay').min = t;
   if (document.activeElement !== $('planDay')) $('planDay').value = viewDay; // don't fight someone typing a date
   $('dayPrev').disabled = isToday; $('dayToday').hidden = isToday;
@@ -302,6 +308,8 @@ export function initDaily() {
   $('dayToday').addEventListener('click', () => setViewDay(todayKey()));
   $('planDay').addEventListener('change', () => { if ($('planDay').value) setViewDay($('planDay').value); });
   $('planDay').addEventListener('blur', () => { $('planDay').value = viewDay; });
+  // When the input is an invisible icon (phones), a tap anywhere on it should open the picker.
+  $('planDay').addEventListener('click', () => { try { $('planDay').showPicker(); } catch { /* unsupported or already open */ } });
   ['aName', 'aTime', 'aDur', 'aDate'].forEach(k => $(k).addEventListener('input', () => { $('aErr').hidden = true; }));
   $('aCancel').addEventListener('click', clearForm);
   $('aSave').addEventListener('click', saveForm);

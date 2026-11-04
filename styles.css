@@ -65,6 +65,11 @@ input[type=time]::-webkit-date-and-time-value,input[type=date]::-webkit-date-and
 .daynav input[type=date]{width:auto;font-size:.9rem;padding:6px 10px;min-height:40px}
 .daynav .iconbtn:disabled{opacity:.35;cursor:default}
 .daynav .iconbtn:disabled:hover{border-color:var(--line)}
+.plan-head{flex-wrap:nowrap;min-width:0}
+.plan-head h2{flex:1 1 auto;min-width:0}
+.plan-head .daynav{flex:none;flex-wrap:nowrap}
+.dpick{position:relative;display:inline-flex}
+.dpick-ico{display:none}
 /* − / + stepper around number inputs (see js/stepper.js); native spinners hidden */
 input[type=number]{-moz-appearance:textfield;appearance:textfield}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
@@ -294,17 +299,29 @@ body.focus-mode .timer-top:hover,body.focus-mode .timer-top:focus-within{opacity
   .hist li{grid-template-columns:5.5rem minmax(0,1fr) 3.4rem}
   .presets{position:static}
   .presets-pop{left:12px;right:12px;top:auto;width:auto;margin-top:8px}
-  /* day switcher on one line: the date box takes the spare width and shrinks */
-  .daynav{flex-wrap:nowrap;width:100%;gap:4px}
-  .daynav input[type=date]{flex:1 1 auto;width:0;min-width:0;font-size:.85rem;padding:6px 6px}
-  .daynav .iconbtn{width:34px;height:34px}
-  .daynav .btn.small{flex:none;padding-inline:10px}
+  /* header + day switcher share one row: the date box becomes a calendar icon
+     (the heading already says the date) with the real input invisible on top */
+  .plan-head{gap:8px}
+  .plan-head h2{font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tmrw .tm-m{display:none}
+  .daynav{gap:4px}
+  .daynav .iconbtn{width:32px;height:32px}
+  .dpick{width:32px;height:32px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--fg);place-items:center;display:inline-grid}
+  .dpick:focus-within{outline:2px solid var(--focus);outline-offset:2px}
+  .dpick-ico{display:block;width:16px;height:16px}
+  .daynav .dpick input[type=date]{position:absolute;inset:0;width:100%;height:100%;min-height:0;padding:0;border:0;opacity:0;cursor:pointer}
+  .daynav .btn.small{flex:none;padding:6px 9px;font-size:.8rem}
 }
 @media (max-width:359px){
   .fields{grid-template-columns:minmax(0,1fr)}
+  .tmrw .tm-d{display:none}
+}
+/* small phones: tighter day switcher so "Tomorrow, Thu 5" still fits beside it */
+@media (max-width:379px){
+  .plan-head{gap:6px}
+  .plan-head h2{font-size:.95rem}
   .daynav{gap:3px}
-  .daynav input[type=date]{font-size:.78rem;padding:6px 4px}
-  .daynav .iconbtn{width:30px;height:30px}
-  .daynav .btn.small{padding-inline:8px}
+  .daynav .iconbtn,.dpick{width:30px;height:30px}
+  .daynav .btn.small{padding-inline:7px}
 }
 @media (prefers-reduced-motion:reduce){.ring-fg,.presets>summary::after,body.focus-mode .controls{transition:none}}
