@@ -294,6 +294,17 @@ body.focus-mode .timer-top:hover,body.focus-mode .timer-top:focus-within{opacity
   .hist li{grid-template-columns:5.5rem minmax(0,1fr) 3.4rem}
   .presets{position:static}
   .presets-pop{left:12px;right:12px;top:auto;width:auto;margin-top:8px}
+  /* day switcher on one line: the date box takes the spare width and shrinks */
+  .daynav{flex-wrap:nowrap;width:100%;gap:4px}
+  .daynav input[type=date]{flex:1 1 auto;width:0;min-width:0;font-size:.85rem;padding:6px 6px}
+  .daynav .iconbtn{width:34px;height:34px}
+  .daynav .btn.small{flex:none;padding-inline:10px}
 }
-@media (max-width:359px){.fields{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:359px){
+  .fields{grid-template-columns:minmax(0,1fr)}
+  .daynav{gap:3px}
+  .daynav input[type=date]{font-size:.78rem;padding:6px 4px}
+  .daynav .iconbtn{width:30px;height:30px}
+  .daynav .btn.small{padding-inline:8px}
+}
 @media (prefers-reduced-motion:reduce){.ring-fg,.presets>summary::after,body.focus-mode .controls{transition:none}}
